@@ -1,6 +1,7 @@
 Count Min Sketch implementation in Ruby
 =======================================
 
+```
 Diginorm v0.1 by Chris Boursnell <cmb211@cam.ac.uk>
 
 Digital Normalisation by median
@@ -19,3 +20,4 @@ OPTIONS:
        --cutoff, -c <i>:   cutoff coverage (default: 20)
              --help, -h:   Show this message
 
+```
