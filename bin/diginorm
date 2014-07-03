@@ -1,0 +1,128 @@
+#!/usr/bin/env ruby
+
+#
+# digital normalisation using ruby cm-sketch
+#
+
+require 'cm-sketch'
+require 'trollop'
+
+
+opts = Trollop::options do
+  banner <<-EOS
+
+Diginorm v0.1 by Chris Boursnell <cmb211@cam.ac.uk>
+
+Digital Normalisation by median
+Totally ripped off from Titus Brown (http://khmer.readthedocs.org/en/v1.1/)
+
+USAGE:
+diginorm <options>
+
+OPTIONS:
+
+EOS
+  opt :left,
+      "fastq file",
+      :required => true,
+      :type => String
+
+  opt :right,
+      "second fastq file",
+      :required => true,
+      :type => String
+
+  opt :output,
+      "output fastq file",
+      :required => true,
+      :type => String
+
+  opt :k,
+      "size of kmers to use",
+      :default => 21,
+      :type => :int
+
+  opt :buckets,
+      "number of buckets",
+      :default => 4,
+      :type => :int
+
+  opt :bucket_size,
+      "size of buckets",
+      :short => 's',
+      :default => 10000,
+      :type => :int
+
+  opt :cutoff,
+      "cutoff coverage",
+      :default => 20,
+      :type => :int
+end
+
+Trollop::die :left, "must exist" if !File.exist?(opts[:left])
+Trollop::die :right, "must exist" if !File.exist?(opts[:right])
+
+cms = CMSketch.new(opts.buckets, opts.bucket_size)
+k = opts.k
+
+def ticker(i,speed,j)
+  n = 10**speed
+  if i <= 1
+    print " "*16
+    print "0"
+  end
+  if i % n == 0
+    print "\b"*17
+    string = "#{i} #{j}"
+    print " "*(17-string.length)
+    print string
+  end
+end
+
+kmers = []
+counts = []
+count=1
+File.open("#{opts.output}.1.fastq", "w") do |out1|
+  File.open("#{opts.output}.2.fastq", "w") do |out2|
+    left = File.open(opts.left)
+    right = File.open(opts.right)
+
+    name1 = left.readline rescue nil
+    name2 = right.readline rescue nil
+    while name1 != nil and name2 != nil
+      seq1 = left.readline
+      plus1 = left.readline
+      quals1 = left.readline
+      seq2 = right.readline
+      plus2 = right.readline
+      quals2 = right.readline
+
+      kmers.clear
+      counts.clear
+      (0..seq1.length-k-1).each do |i|
+        kmers << seq1[i..i+k-1]
+      end
+      (0..seq2.length-k-1).each do |i|
+        kmers << seq2[i..i+k-1]
+      end
+
+      kmers.each do |kmer|
+        counts << cms.get(kmer)
+      end
+      median = counts.sort[counts.length/2+1]
+      ticker(count, 2, median)
+      if median <= opts.cutoff
+        kmers.each do |kmer|
+          cms.add(kmer)
+        end
+        out1.write "#{name1}#{seq1}+\n#{quals1}"
+        out2.write "#{name2}#{seq2}+\n#{quals2}"
+      end
+
+      name1 = left.readline rescue nil
+      name2 = right.readline rescue nil
+      count+=1
+    end
+
+  end
+end

@@ -17,9 +17,6 @@ class TestCMSketch < Test::Unit::TestCase
       assert @sketch
     end
 
-    # should 'select hash function to use' do
-    # end
-
     should 'add object' do
       kmer = "ATCGGTCACTAG"
       assert @sketch.add(kmer)

@@ -12,6 +12,7 @@ Gem::Specification.new do |gem|
   gem.license     = 'MIT'
 
   gem.add_dependency 'rake'
+  gem.add_dependency 'trollop'
 
   gem.add_development_dependency 'turn'
   gem.add_development_dependency 'simplecov'
